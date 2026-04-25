@@ -1,23 +1,14 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:15
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: "1234"
-      POSTGRES_DB: delivery_db
-    ports:
-      - "5433:5432"
-
   order-service:
     build: .
     ports:
       - "3001:3001"
+    env_file:
+      - .env
     environment:
       PORT: 3001
-      DATABASE_URL: postgresql://admin:1234@postgres:5432/delivery_db
-      KITCHEN_URL: http://kitchen-service:3002
-      NOTIFICATION_URL: http://notification-service:3004
-    depends_on:
-      - postgres
+      DATABASE_URL: ${DATABASE_URL}
+      KITCHEN_URL: ${KITCHEN_URL}
+      NOTIFICATION_URL: ${NOTIFICATION_URL}
