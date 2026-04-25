@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Delivery {
+  id                   Int       @id @default(autoincrement())
+  order_id             Int       @unique
+  status               String
+  delivery_started_at  DateTime?
+  delivery_finished_at DateTime?
+  Order                Order     @relation(fields: [order_id], references: [id])
+}
+
+model KitchenOrder {
+  id               Int       @id @default(autoincrement())
+  order_id         Int       @unique
+  status           String
+  cook_started_at  DateTime?
+  cook_finished_at DateTime?
+  Order            Order     @relation(fields: [order_id], references: [id])
+}
+
+model Menu {
+  id    Int     @id @default(autoincrement())
+  name  String
+  Order Order[]
+}
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  order_id   Int?
+  message    String
+  type       String
+  is_read    Boolean  @default(false)
+  created_at DateTime @default(now())
+  Order      Order?   @relation(fields: [order_id], references: [id])
+  User       User     @relation(fields: [user_id], references: [id])
+}
+
+model Order {
+  id           Int            @id @default(autoincrement())
+  user_id      Int
+  menu_id      Int
+  status       String         @default("PENDING")
+  created_at   DateTime       @default(now())
+  updated_at   DateTime       @updatedAt
+  Delivery     Delivery?
+  KitchenOrder KitchenOrder?
+  Notification Notification[]
+  Menu         Menu           @relation(fields: [menu_id], references: [id])
+  User         User           @relation(fields: [user_id], references: [id])
+}
+
+model User {
+  id           Int            @id @default(autoincrement())
+  username     String         @unique
+  created_at   DateTime       @default(now())
+  Notification Notification[]
+  Order        Order[]
+}

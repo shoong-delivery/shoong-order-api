@@ -1,7 +1,7 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  order-service:
+  order-api:
     build: .
     ports:
       - "3001:3001"
@@ -12,3 +12,9 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       KITCHEN_URL: ${KITCHEN_URL}
       NOTIFICATION_URL: ${NOTIFICATION_URL}
+    networks:
+      - shoong-network
+
+networks:
+  shoong-network:
+    external: true
