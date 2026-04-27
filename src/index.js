@@ -47,11 +47,11 @@ app.post("/:menuId", async (req, res) => {
       data: { user_id: user.id, menu_id: menuId, status: "PENDING" },
     });
 
-    await axios.post(`${process.env.KITCHEN_API_URL}/kitchen/start`, {
+    await axios.post(`${process.env.KITCHEN_API_URL}/start`, {
       order_id: order.id,
     });
 
-    await axios.post(`${process.env.NOTIFICATION_API_URL}/notify`, {
+    await axios.post(`${process.env.NOTIFICATION_API_URL}`, {
       type: "order",
       message: "주문이 생성되었습니다",
       user_id: order.user_id,
