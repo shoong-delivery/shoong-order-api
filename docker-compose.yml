@@ -10,8 +10,8 @@ services:
     environment:
       PORT: 3001
       DATABASE_URL: ${DATABASE_URL}
-      KITCHEN_URL: ${KITCHEN_URL}
-      NOTIFICATION_URL: ${NOTIFICATION_URL}
+      KITCHEN_API_URL: ${KITCHEN_API_URL}
+      NOTIFICATION_API_URL: ${NOTIFICATION_API_URL}
     networks:
       - shoong-network
 

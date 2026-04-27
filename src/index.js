@@ -11,11 +11,11 @@ app.use(express.json());
 const cors = require("cors");
 app.use(cors());
 
-// Health Check (EKS probe용)
+// Health Check
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 
-// 메뉴 조회: GET /order/menu
-app.get("/order/menu", async (req, res) => {
+// 메뉴 조회: GET /menu
+app.get("/menu", async (req, res) => {
   try {
     const menus = await prisma.menu.findMany();
     res.json({
@@ -29,24 +29,8 @@ app.get("/order/menu", async (req, res) => {
   }
 });
 
-// 오래된 주문 삭제: DELETE /order/old
-app.delete("/order/old", async (req, res) => {
-  try {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 7);
-
-    const deleted = await prisma.order.deleteMany({
-      where: { created_at: { lt: cutoff } },
-    });
-
-    res.json({ success: true, deleted: deleted.count });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// 주문 생성: POST /order
-app.post("/order/:menuId", async (req, res) => {
+// 주문 생성: POST /:menuId
+app.post("/:menuId", async (req, res) => {
   try {
     const menuId = Number(req.params.menuId);
     const userName = req.query.userName;
@@ -63,11 +47,11 @@ app.post("/order/:menuId", async (req, res) => {
       data: { user_id: user.id, menu_id: menuId, status: "PENDING" },
     });
 
-    await axios.post(`${process.env.KITCHEN_URL}/kitchen/start`, {
+    await axios.post(`${process.env.KITCHEN_API_URL}/kitchen/start`, {
       order_id: order.id,
     });
 
-    await axios.post(`${process.env.NOTIFICATION_URL}/alarms`, {
+    await axios.post(`${process.env.NOTIFICATION_API_URL}/notify`, {
       type: "order",
       message: "주문이 생성되었습니다",
       user_id: order.user_id,
@@ -81,7 +65,7 @@ app.post("/order/:menuId", async (req, res) => {
   }
 });
 
-// 주문 조회: GET /order/:orderId
+// 주문 목록 조회: GET /list
 const STATUS_MAP = {
   PENDING: "주문수락전",
   COOKING: "조리중",
@@ -90,7 +74,7 @@ const STATUS_MAP = {
   DELIVERED: "배달완료",
 };
 
-app.get("/orders", async (req, res) => {
+app.get("/list", async (req, res) => {
   try {
     const { userName } = req.query;
 
@@ -120,8 +104,8 @@ app.get("/orders", async (req, res) => {
   }
 });
 
-// 주문 상태 변경: PATCH /order/:orderId/status
-app.patch("/order/:orderId/status", async (req, res) => {
+// 주문 상태 변경: PATCH /:orderId/status
+app.patch("/:orderId/status", async (req, res) => {
   try {
     const order = await prisma.order.update({
       where: { id: Number(req.params.orderId) },
