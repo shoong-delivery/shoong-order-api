@@ -2,8 +2,11 @@
   "name": "order-service",
   "version": "1.0.0",
   "scripts": {
-    "dev": "nodemon src/index.js",
-    "start": "node src/index.js"
+    "dev": "nodemon --exec ts-node src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "eslint . --ext .ts",
+    "test": "jest"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -16,6 +19,18 @@
     "prisma": "5.22.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.0"
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.6.0",
+    "@typescript-eslint/parser": "^8.59.2",
+    "eslint": "^10.3.0",
+    "eslint-config-prettier": "^10.1.8",
+    "jest": "^30.3.0",
+    "nodemon": "^3.0.0",
+    "prettier": "^3.8.3",
+    "ts-jest": "^29.4.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
   }
 }
