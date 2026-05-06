@@ -1,0 +1,143 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+jobs:
+  # PR Open시 실행 - lint, typecheck, test
+  code-quality:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type Check
+        run: npm run typecheck
+
+      - name: Test
+        run: npm run test
+
+  # develop 브랜치 머지시 실행 - docker build, trivy 스캔, ECR push, GitOps dev tag 업데이트
+  publish-dev:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Docker Build & Tag
+        id: build
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: shoong-order
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Trivy 보안 스캔
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.build.outputs.image }}
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Push to ECR
+        run: |
+          docker push ${{ steps.build.outputs.image }}
+
+      - name: Update image tag in GitOps dev
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "github-actions"
+          git clone https://x-access-token:${{ secrets.GITOPS_TOKEN }}@github.com/shoong-delivery/shoong-gitops.git
+          cd shoong-gitops
+          sed -i "s|tag:.*|tag: \"$IMAGE_TAG\"|" envs/dev/shoong-order.yaml
+          git add .
+          git commit -m "update shoong-order dev image tag to $IMAGE_TAG"
+          git push
+
+  # main 브랜치 머지시 실행 - docker build, trivy 스캔, ECR push, GitOps prod tag 업데이트
+  publish-prod:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Docker Build & Tag
+        id: build
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: shoong-order
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Trivy 보안 스캔
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.build.outputs.image }}
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Push to ECR
+        run: |
+          docker push ${{ steps.build.outputs.image }}
+
+      - name: Update image tag in GitOps prod
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "github-actions"
+          git clone https://x-access-token:${{ secrets.GITOPS_TOKEN }}@github.com/shoong-delivery/shoong-gitops.git
+          cd shoong-gitops
+          sed -i "s|tag:.*|tag: \"$IMAGE_TAG\"|" envs/prod/shoong-order.yaml
+          git add .
+          git commit -m "update shoong-order prod image tag to $IMAGE_TAG"
+          git push
