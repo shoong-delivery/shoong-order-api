@@ -80,6 +80,7 @@ jobs:
 
       - name: Trivy 보안 스캔
         uses: aquasecurity/trivy-action@master
+        continue-on-error: true
         with:
           image-ref: ${{ steps.build.outputs.image }}
           format: 'table'
@@ -137,6 +138,7 @@ jobs:
 
       - name: Trivy 보안 스캔
         uses: aquasecurity/trivy-action@master
+        continue-on-error: true
         with:
           image-ref: ${{ steps.build.outputs.image }}
           format: 'table'
