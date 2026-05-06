@@ -88,8 +88,8 @@ jobs:
           git commit -m "update shoong-order dev image tag to $IMAGE_TAG"
           git push
 
-  # # main 브랜치 머지시 실행 - docker build, trivy 스캔, ECR push, GitOps prod tag 업데이트
-  # publish-prod:
+  # main 브랜치 머지시 실행 - docker build, trivy 스캔, ECR push, GitOps prod tag 업데이트
+  publish-prod:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
