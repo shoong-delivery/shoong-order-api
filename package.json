@@ -6,7 +6,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "lint": "eslint . --ext .ts",
-    "test": "jest"
+    "test": "jest",
+    "typecheck": "npx tsc --noEmit"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

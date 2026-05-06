@@ -17,7 +17,7 @@ app.get('/menu', async (_req: Request, res: Response) => {
   try {
     const menus = await prisma.menu.findMany();
     res.json({
-      menus: menus.map((m) => ({
+      menus: menus.map((m: { id: number; name: string }) => ({
         id: String(m.id),
         name: m.name,
       })),
@@ -77,7 +77,7 @@ app.get('/list', async (req: Request, res: Response) => {
     });
 
     res.json({
-      orders: orders.map((o) => ({
+      orders: orders.map((o: { Menu: { id: number; name: string }; status: string }) => ({
         menu: { id: String(o.Menu.id), name: o.Menu.name },
         status: STATUS_MAP[o.status] ?? o.status,
       })),
