@@ -93,7 +93,7 @@ jobs:
 
       - name: Update image tag in GitOps dev
         env:
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: dev-${{ github.sha }}
         run: |
           git config --global user.email "github-actions@github.com"
           git config --global user.name "github-actions"
@@ -151,7 +151,7 @@ jobs:
 
       - name: Update image tag in GitOps prod
         env:
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: prod-${{ github.sha }}
         run: |
           git config --global user.email "github-actions@github.com"
           git config --global user.name "github-actions"
