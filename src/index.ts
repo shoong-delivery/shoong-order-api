@@ -100,8 +100,9 @@ app.patch('/:orderId/status', async (req: Request, res: Response) => {
   }
 });
 
-const server = app.listen(process.env.PORT, () =>
-  console.log(`[order-service] :${process.env.PORT}`)
+const PORT = process.env.PORT || 3001;
+const server = app.listen(PORT, () =>
+  console.log(`[order-service] :${PORT}`)
 );
 
 process.on('SIGTERM', async () => {
