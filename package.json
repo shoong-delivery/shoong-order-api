@@ -4,12 +4,15 @@
   "scripts": {
     "dev": "nodemon --exec ts-node src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node --require ./dist/instrumentation.js dist/index.js",
     "lint": "eslint . --ext .ts",
     "test": "jest",
     "typecheck": "npx tsc --noEmit"
   },
   "dependencies": {
+    "@opentelemetry/auto-instrumentations-node": "^0.56.1",
+    "@opentelemetry/exporter-trace-otlp-grpc": "^0.56.0",
+    "@opentelemetry/sdk-node": "^0.56.0",
     "@prisma/client": "^5.22.0",
     "axios": "^1.6.0",
     "cors": "^2.8.6",
@@ -22,7 +25,6 @@
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
-    "prisma": "5.22.0",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.6.0",
@@ -32,6 +34,7 @@
     "jest": "^30.3.0",
     "nodemon": "^3.0.0",
     "prettier": "^3.8.3",
+    "prisma": "5.22.0",
     "ts-jest": "^29.4.9",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
