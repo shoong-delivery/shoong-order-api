@@ -52,7 +52,7 @@ jobs:
         with:
           status: failure
           text: '❌ [shoong-order] PR 검증 실패 | `${{ github.head_ref }}` → `${{ github.base_ref }}` | ${{ github.actor }}'
-          fields: repo,message,commit,author,action,eventName,ref,workflow,took
+          fields: repo,message,commit,author,action,eventName,ref,took
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_DEPLOY }}
 
@@ -120,7 +120,7 @@ jobs:
         with:
           status: success
           text: '📦 [shoong-order] dev ECR 푸시 완료 | `dev-${{ github.sha }}`'
-          fields: repo,commit,author,workflow,took
+          fields: repo,commit,author,took
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_DEPLOY }}
 
@@ -130,7 +130,7 @@ jobs:
         with:
           status: failure
           text: '🚨 [shoong-order] dev 빌드/푸시 실패 | ${{ github.actor }}'
-          fields: repo,message,commit,author,workflow,took
+          fields: repo,message,commit,author,took
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_DEPLOY }}
 
@@ -198,7 +198,7 @@ jobs:
         with:
           status: success
           text: '🚀 [shoong-order] prod ECR 푸시 완료 | `prod-${{ github.sha }}`'
-          fields: repo,commit,author,workflow,took
+          fields: repo,commit,author,took
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_DEPLOY }}
 
@@ -208,6 +208,6 @@ jobs:
         with:
           status: failure
           text: '🚨 [shoong-order] prod 빌드/푸시 실패 | ${{ github.actor }}'
-          fields: repo,message,commit,author,workflow,took
+          fields: repo,message,commit,author,took
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_DEPLOY }}
