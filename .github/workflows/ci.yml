@@ -46,6 +46,16 @@ jobs:
       - name: Test
         run: npm run test
 
+      - name: Slack 알림 (CI 실패)
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: '❌ [shoong-order] PR 검증 실패 | `${{ github.head_ref }}` → `${{ github.base_ref }}` | ${{ github.actor }}'
+          fields: repo,message,commit,author,action,eventName,ref,workflow,took
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_DEPLOY }}
+
   # develop 브랜치 머지시 실행 - docker build, trivy 스캔, ECR push, GitOps dev tag 업데이트
   publish-dev:
     if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
@@ -104,6 +114,26 @@ jobs:
           git commit -m "update shoong-order dev image tag to $IMAGE_TAG"
           git push
 
+      - name: Slack 알림 (dev 배포 성공)
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          text: '📦 [shoong-order] dev ECR 푸시 완료 | `dev-${{ github.sha }}`'
+          fields: repo,commit,author,workflow,took
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_DEPLOY }}
+
+      - name: Slack 알림 (dev 배포 실패)
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: '🚨 [shoong-order] dev 빌드/푸시 실패 | ${{ github.actor }}'
+          fields: repo,message,commit,author,workflow,took
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_DEPLOY }}
+
   # main 브랜치 머지시 실행 - docker build, trivy 스캔, ECR push, GitOps prod tag 업데이트
   publish-prod:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -161,3 +191,23 @@ jobs:
           git add .
           git commit -m "update shoong-order prod image tag to $IMAGE_TAG"
           git push
+
+      - name: Slack 알림 (prod 배포 성공)
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          text: '🚀 [shoong-order] prod ECR 푸시 완료 | `prod-${{ github.sha }}`'
+          fields: repo,commit,author,workflow,took
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_DEPLOY }}
+
+      - name: Slack 알림 (prod 배포 실패)
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: '🚨 [shoong-order] prod 빌드/푸시 실패 | ${{ github.actor }}'
+          fields: repo,message,commit,author,workflow,took
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_DEPLOY }}
