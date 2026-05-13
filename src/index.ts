@@ -87,6 +87,37 @@ app.get('/list', async (req: Request, res: Response) => {
   }
 });
 
+// 오래된 주문 삭제: DELETE /orders/old (7일 이상)
+app.delete('/orders/old', async (_req: Request, res: Response) => {
+  try {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 7);
+
+    const oldOrders = await prisma.order.findMany({
+      where: { created_at: { lt: cutoff } },
+      select: { id: true },
+    });
+
+    const orderIds = oldOrders.map((o) => o.id);
+
+    if (orderIds.length === 0) {
+      return res.json({ success: true, deleted: 0 });
+    }
+
+    await prisma.$transaction([
+      prisma.notification.deleteMany({ where: { order_id: { in: orderIds } } }),
+      prisma.delivery.deleteMany({ where: { order_id: { in: orderIds } } }),
+      prisma.kitchenOrder.deleteMany({ where: { order_id: { in: orderIds } } }),
+      prisma.order.deleteMany({ where: { id: { in: orderIds } } }),
+    ]);
+
+    res.json({ success: true, deleted: orderIds.length });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, error: (err as Error).message });
+  }
+});
+
 // 주문 상태 변경: PATCH /:orderId/status
 app.patch('/:orderId/status', async (req: Request, res: Response) => {
   try {
@@ -100,8 +131,9 @@ app.patch('/:orderId/status', async (req: Request, res: Response) => {
   }
 });
 
-const server = app.listen(process.env.PORT, () =>
-  console.log(`[order-service] :${process.env.PORT}`)
+const PORT = process.env.PORT || 3001;
+const server = app.listen(PORT, () =>
+  console.log(`[order-service] :${PORT}`)
 );
 
 process.on('SIGTERM', async () => {
