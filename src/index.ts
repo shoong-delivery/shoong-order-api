@@ -3,6 +3,7 @@ import express, { Request, Response } from 'express';
 import axios from 'axios';
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
+import { registry, refreshGauges, orderCreateTotal } from './metrics';
 
 const prisma = new PrismaClient();
 const app = express();
@@ -11,6 +12,18 @@ app.use(cors());
 
 // Health Check
 app.get('/health', (_req: Request, res: Response) => res.json({ status: 'ok' }));
+
+// Prometheus 스크랩 엔드포인트
+app.get('/metrics', async (_req: Request, res: Response) => {
+  try {
+    await refreshGauges(prisma);
+    res.set('Content-Type', registry.contentType);
+    res.end(await registry.metrics());
+  } catch (err) {
+    console.error('[metrics] error -', (err as Error).message);
+    res.status(500).end();
+  }
+});
 
 // 메뉴 조회: GET /menu
 app.get('/menu', async (_req: Request, res: Response) => {
@@ -34,7 +47,10 @@ app.post('/:menuId', async (req: Request, res: Response) => {
     const userName = req.query.userName as string;
 
     const user = await prisma.user.findUnique({ where: { username: userName } });
-    if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+    if (!user) {
+      orderCreateTotal.labels('fail').inc();
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
 
     const order = await prisma.order.create({
       data: { user_id: user.id, menu_id: menuId, status: 'PENDING' },
@@ -48,8 +64,10 @@ app.post('/:menuId', async (req: Request, res: Response) => {
       order_id: order.id,
     });
 
+    orderCreateTotal.labels('success').inc();
     res.status(201).json({ success: true, data: order });
   } catch (err) {
+    orderCreateTotal.labels('fail').inc();
     console.error(err);
     res.status(500).json({ success: false, error: (err as Error).message });
   }
@@ -83,6 +101,51 @@ app.get('/list', async (req: Request, res: Response) => {
       })),
     });
   } catch (err) {
+    res.status(500).json({ success: false, error: (err as Error).message });
+  }
+});
+
+// 적체 주문 조회: GET /orders/overdue?status=COOKING&minutes=3
+// 배치(shoong-batch)가 자동 진행시킬 대상을 찾기 위해 사용
+app.get('/orders/overdue', async (req: Request, res: Response) => {
+  try {
+    const status = req.query.status as string;
+    const minutes = Number(req.query.minutes);
+
+    if (!status || !Number.isFinite(minutes) || minutes <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'status and positive minutes are required',
+      });
+    }
+
+    const cutoff = new Date(Date.now() - minutes * 60 * 1000);
+    let orderIds: number[] = [];
+
+    if (status === 'COOKING') {
+      const rows = await prisma.kitchenOrder.findMany({
+        where: { status: 'COOKING', cook_started_at: { lt: cutoff } },
+        select: { order_id: true },
+        take: 100,
+      });
+      orderIds = rows.map((r) => r.order_id);
+    } else if (status === 'DELIVERING') {
+      const rows = await prisma.delivery.findMany({
+        where: { status: 'DELIVERING', delivery_started_at: { lt: cutoff } },
+        select: { order_id: true },
+        take: 100,
+      });
+      orderIds = rows.map((r) => r.order_id);
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: 'status must be COOKING or DELIVERING',
+      });
+    }
+
+    res.json({ success: true, order_ids: orderIds });
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ success: false, error: (err as Error).message });
   }
 });
