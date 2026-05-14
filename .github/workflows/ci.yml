@@ -51,7 +51,7 @@ jobs:
         run: |
           curl -s -X POST ${{ secrets.SLACK_WEBHOOK_DEPLOY }} \
             -H 'Content-type: application/json' \
-            -d '{"text":"❌ [shoong-order] PR 검증 실패 | `${{ github.head_ref }}` → `${{ github.base_ref }}` | ${{ github.actor }}"}'
+            -d '{"text":"❌[shoong-order] PR 검증 실패 | `${{ github.head_ref }}` → `${{ github.base_ref }}` | ${{ github.actor }}"}'
 
   # develop 브랜치 머지시 실행 - docker build, trivy 스캔, ECR push, GitOps dev tag 업데이트
   publish-dev:
@@ -116,14 +116,14 @@ jobs:
         run: |
           curl -s -X POST ${{ secrets.SLACK_WEBHOOK_DEPLOY }} \
             -H 'Content-type: application/json' \
-            -d '{"text":"📦 [shoong-order] dev ECR 푸시 완료 | `dev-${{ github.sha }}`"}'
+            -d '{"text":"[shoong-order] dev ECR 푸시 완료 | `dev-${{ github.sha }}`"}'
 
       - name: Slack 알림 (dev 배포 실패)
         if: failure()
         run: |
           curl -s -X POST ${{ secrets.SLACK_WEBHOOK_DEPLOY }} \
             -H 'Content-type: application/json' \
-            -d '{"text":"🚨 [shoong-order] dev 빌드/푸시 실패 | ${{ github.actor }}"}'
+            -d '{"text":"❌[shoong-order] dev 빌드/푸시 실패 | ${{ github.actor }}"}'
 
   # main 브랜치 머지시 실행 - docker build, trivy 스캔, ECR push, GitOps prod tag 업데이트
   publish-prod:
@@ -188,11 +188,11 @@ jobs:
         run: |
           curl -s -X POST ${{ secrets.SLACK_WEBHOOK_DEPLOY }} \
             -H 'Content-type: application/json' \
-            -d '{"text":"🚀 [shoong-order] prod ECR 푸시 완료 | `prod-${{ github.sha }}`"}'
+            -d '{"text":"[shoong-order] prod ECR 푸시 완료 | `prod-${{ github.sha }}`"}'
 
       - name: Slack 알림 (prod 배포 실패)
         if: failure()
         run: |
           curl -s -X POST ${{ secrets.SLACK_WEBHOOK_DEPLOY }} \
             -H 'Content-type: application/json' \
-            -d '{"text":"🚨 [shoong-order] prod 빌드/푸시 실패 | ${{ github.actor }}"}'
+            -d '{"text":"❌[shoong-order] prod 빌드/푸시 실패 | ${{ github.actor }}"}'
