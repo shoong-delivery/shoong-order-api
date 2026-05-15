@@ -2,13 +2,28 @@ import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import axios from 'axios';
 import cors from 'cors';
+import pinoHttp from 'pino-http';
 import { PrismaClient } from '@prisma/client';
 import { registry, refreshGauges, orderCreateTotal } from './metrics';
+import { logger } from './logger';
 
 const prisma = new PrismaClient();
 const app = express();
 app.use(express.json());
 app.use(cors());
+app.use(
+  pinoHttp({
+    logger,
+    autoLogging: {
+      ignore: (req) => req.url === '/health' || req.url === '/metrics',
+    },
+    customLogLevel: (_req, res, err) => {
+      if (err || res.statusCode >= 500) return 'error';
+      if (res.statusCode >= 400) return 'warn';
+      return 'info';
+    },
+  }),
+);
 
 // Health Check
 app.get('/health', (_req: Request, res: Response) => res.json({ status: 'ok' }));
@@ -20,7 +35,7 @@ app.get('/metrics', async (_req: Request, res: Response) => {
     res.set('Content-Type', registry.contentType);
     res.end(await registry.metrics());
   } catch (err) {
-    console.error('[metrics] error -', (err as Error).message);
+    logger.error({ err }, '[metrics] refresh failed');
     res.status(500).end();
   }
 });
@@ -65,10 +80,11 @@ app.post('/:menuId', async (req: Request, res: Response) => {
     });
 
     orderCreateTotal.labels('success').inc();
+    logger.info({ order_id: order.id, user_id: user.id, menu_id: menuId }, 'order created');
     res.status(201).json({ success: true, data: order });
   } catch (err) {
     orderCreateTotal.labels('fail').inc();
-    console.error(err);
+    logger.error({ err }, 'order create failed');
     res.status(500).json({ success: false, error: (err as Error).message });
   }
 });
@@ -145,7 +161,7 @@ app.get('/orders/overdue', async (req: Request, res: Response) => {
 
     res.json({ success: true, order_ids: orderIds });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, '[overdue] query failed');
     res.status(500).json({ success: false, error: (err as Error).message });
   }
 });
@@ -174,9 +190,10 @@ app.delete('/orders/old', async (_req: Request, res: Response) => {
       prisma.order.deleteMany({ where: { id: { in: orderIds } } }),
     ]);
 
+    logger.info({ deleted: orderIds.length }, '[cleanup] old orders deleted');
     res.json({ success: true, deleted: orderIds.length });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, '[cleanup] delete failed');
     res.status(500).json({ success: false, error: (err as Error).message });
   }
 });
@@ -196,11 +213,11 @@ app.patch('/:orderId/status', async (req: Request, res: Response) => {
 
 const PORT = process.env.PORT || 3001;
 const server = app.listen(PORT, () =>
-  console.log(`[order-service] :${PORT}`)
+  logger.info({ port: PORT }, 'order-service listening'),
 );
 
 process.on('SIGTERM', async () => {
-  console.log('[order-service] SIGTERM received, shutting down...');
+  logger.info('SIGTERM received, shutting down');
   await prisma.$disconnect();
   server.close(() => process.exit(0));
 });
