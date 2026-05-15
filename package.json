@@ -10,33 +10,33 @@
     "typecheck": "npx tsc --noEmit"
   },
   "dependencies": {
-    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/auto-instrumentations-node": "^0.56.1",
     "@opentelemetry/exporter-trace-otlp-grpc": "^0.56.0",
     "@opentelemetry/sdk-node": "^0.56.0",
     "@prisma/client": "^5.22.0",
-    "axios": "^1.6.0",
+    "axios": "^1.16.1",
     "cors": "^2.8.6",
-    "dotenv": "^16.0.0",
-    "express": "^4.18.2",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
     "pg": "^8.20.0",
-    "pino": "^9.5.0",
-    "pino-http": "^10.3.0",
-    "prom-client": "^15.1.0"
+    "pino": "^10.3.1",
+    "pino-http": "^11.0.0",
+    "prom-client": "^15.1.3"
   },
   "overrides": {
-    "tar": "^7.5.11"
+    "tar": "^7.5.15"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
-    "@types/node": "^25.6.0",
-    "@typescript-eslint/parser": "^8.59.2",
+    "@types/node": "^25.8.0",
+    "@typescript-eslint/parser": "^8.59.3",
     "eslint": "^10.3.0",
     "eslint-config-prettier": "^10.1.8",
-    "jest": "^30.3.0",
-    "nodemon": "^3.0.0",
+    "jest": "^30.4.2",
+    "nodemon": "^3.1.14",
     "prettier": "^3.8.3",
     "prisma": "5.22.0",
     "ts-jest": "^29.4.9",
